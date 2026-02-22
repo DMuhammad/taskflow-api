@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  CANCELLED
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  uuid      String    @unique @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  projects  Project[]
+
+  // Reverse relations
+  // ownedProjects   Project[] @relation("ProjectOwner")
+  // createdProjects Project[] @relation("ProjectCreatedBy")
+  // updatedProjects Project[] @relation("ProjectUpdatedBy")
+  // createdTasks    Task[]    @relation("TaskCreatedBy")
+  // updatedTasks    Task[]    @relation("TaskUpdatedBy")
+
+  @@map("users")
+}
+
+model Project {
+  id        Int      @id @default(autoincrement())
+  uuid      String   @unique @default(uuid())
+  name      String
+  slug      String   @unique
+  // ownerId   Int      @map("owner_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy Int?     @map("created_by")
+  updatedBy Int?     @map("updated_by")
+  tasks     Task[]
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?     @map("user_id")
+
+  // Relations
+  // owner         User   @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  // createdByUser User?  @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  // updatedByUser User?  @relation("ProjectUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@map("projects")
+}
+
+model Task {
+  id        Int        @id @default(autoincrement())
+  uuid      String     @unique @default(uuid())
+  title     String
+  slug      String     @unique
+  status    TaskStatus @default(TODO)
+  projectId Int        @map("project_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  createdBy Int?       @map("created_by")
+  updatedBy Int?       @map("updated_by")
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Relations
+  // createdByUser User?   @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  // updatedByUser User?   @relation("TaskUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@map("tasks")
+}
